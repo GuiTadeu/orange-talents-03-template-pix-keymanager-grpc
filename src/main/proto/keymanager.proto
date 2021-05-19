@@ -1,20 +1,38 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.orange.keymanager";
-option java_outer_classname = "Keymanager";
-option objc_class_prefix = "HLW";
+option java_outer_classname = "ItauERP";
 
 package com.orange.keymanager;
 
-service KeymanagerService {
-  rpc send (KeymanagerRequest) returns (KeymanagerReply) {}
+import "google/protobuf/any.proto";
+
+service KeyManagerService {
+    rpc createKey (KeyManagerRequest) returns (KeyManagerResponse) {}
 }
 
-message KeymanagerRequest {
-  string name = 1;
+message KeyManagerRequest {
+    string client_id = 1;
+    KeyType key_type = 2;
+    string key_value = 3;
+    AccountType account_type = 4;
 }
 
-message KeymanagerReply {
-  string message = 1;
+message KeyManagerResponse {
+    int64 key_id = 1;
+    KeyType key_type = 2;
+    string key_value = 3;
+    AccountType account_type = 4;
+}
+
+enum AccountType {
+    CONTA_CORRENTE = 0;
+    CONTA_POUPANCA = 1;
+}
+
+enum KeyType {
+    CPF = 0;
+    PHONE_NUMBER = 1;
+    EMAIL = 2;
+    RANDOM = 3;
 }
