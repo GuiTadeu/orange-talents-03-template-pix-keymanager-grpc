@@ -1,8 +1,8 @@
 package com.orange.keymanager.grpc
 
-import com.orange.keymanager.KeyManagerRequest
-import com.orange.keymanager.KeyManagerResponse
-import com.orange.keymanager.KeyManagerServiceGrpc
+import com.orange.keymanager.CreateKeyRequest
+import com.orange.keymanager.CreateKeyResponse
+import com.orange.keymanager.CreateKeyServiceGrpc
 import com.orange.keymanager.models.*
 import com.orange.keymanager.rest.ItauErpRestClient
 import io.grpc.Status.*
@@ -12,10 +12,10 @@ import javax.inject.Singleton
 
 @Singleton
 class CreateKeyGrpcServer(
-    val itauErpRestClient: ItauErpRestClient,
-    @Inject val pixClientRepository: PixClientRepository) : KeyManagerServiceGrpc.KeyManagerServiceImplBase() {
+    private val itauErpRestClient: ItauErpRestClient,
+    @Inject val pixClientRepository: PixClientRepository) : CreateKeyServiceGrpc.CreateKeyServiceImplBase() {
 
-    override fun createKey(request: KeyManagerRequest, responseObserver: StreamObserver<KeyManagerResponse>?) {
+    override fun createKey(request: CreateKeyRequest, responseObserver: StreamObserver<CreateKeyResponse>?) {
 
         val convertedKeyType = request.getConvertedKeyType()
         val convertedAccountType = request.getConvertedAccountType()
@@ -50,7 +50,7 @@ class CreateKeyGrpcServer(
 
         pixClientRepository.save(pixClientKey)
 
-        val response = KeyManagerResponse.newBuilder()
+        val response = CreateKeyResponse.newBuilder()
             .setKeyId(pixClientKey.id!!)
             .setKeyValue(pixClientKey.keyValue)
             .setKeyType(request.keyType)
@@ -61,11 +61,11 @@ class CreateKeyGrpcServer(
         responseObserver.onCompleted()
     }
 
-    private fun KeyManagerRequest.getConvertedKeyType() : KeyType {
+    private fun CreateKeyRequest.getConvertedKeyType() : KeyType {
         return KeyType.valueOf(this.keyType.toString())
     }
 
-    private fun KeyManagerRequest.getConvertedAccountType() : AccountType {
+    private fun CreateKeyRequest.getConvertedAccountType() : AccountType {
         return AccountType.valueOf(this.accountType.toString())
     }
 }

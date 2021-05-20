@@ -1,9 +1,9 @@
 package com.orange.keymanager.grpc
 
 import com.orange.keymanager.AccountType.CONTA_CORRENTE
-import com.orange.keymanager.KeyManagerRequest
-import com.orange.keymanager.KeyManagerServiceGrpc
-import com.orange.keymanager.KeyManagerServiceGrpc.KeyManagerServiceBlockingStub
+import com.orange.keymanager.CreateKeyRequest
+import com.orange.keymanager.CreateKeyServiceGrpc
+import com.orange.keymanager.CreateKeyServiceGrpc.CreateKeyServiceBlockingStub
 import com.orange.keymanager.KeyType.*
 import com.orange.keymanager.models.AccountType
 import com.orange.keymanager.models.KeyType
@@ -28,7 +28,7 @@ import javax.inject.Singleton
 
 @MicronautTest(transactional = false)
 internal class CreateKeyGrpcServerTest(
-    private val grpcClient: KeyManagerServiceBlockingStub,
+    private val grpcClient: CreateKeyServiceBlockingStub,
     private val erpClient: ItauErpRestClient,
     private val pixClientRepository: PixClientRepository
 ) {
@@ -45,7 +45,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `deve dar erro ao tentar cadastrar chave já existente`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(CPF)
             .setKeyValue("308.972.740-40")
@@ -72,7 +72,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `deve dar NOT_FOUND caso o cliente nao exista no ERP do Itau`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(CPF)
             .setKeyValue("308.972.740-40")
@@ -93,7 +93,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `deve criar chave CPF se o keyValue for valido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(CPF)
             .setKeyValue("308.972.740-40")
@@ -111,7 +111,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `nao deve criar chave CPF se o keyValue for invalido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(CPF)
             .setKeyValue("123456789101")
@@ -130,7 +130,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `deve criar chave PHONE_NUMBER se o keyValue for valido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(PHONE_NUMBER)
             .setKeyValue("+5511940028922")
@@ -148,7 +148,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `nao deve criar chave PHONE_NUMBER se o keyValue for invalido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(PHONE_NUMBER)
             .setKeyValue("308.972.740-40")
@@ -167,7 +167,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `deve criar chave EMAIL se o keyValue for valido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(EMAIL)
             .setKeyValue("jubileu@gmail.com")
@@ -185,7 +185,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `nao deve criar chave EMAIL se o keyValue for invalido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(EMAIL)
             .setKeyValue("+5511940028922")
@@ -204,7 +204,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `deve criar chave RANDOM se o keyValue for vazio`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(RANDOM)
             .setKeyValue("")
@@ -222,7 +222,7 @@ internal class CreateKeyGrpcServerTest(
 
     @Test
     internal fun `nao deve criar chave aleatoria se o keyValue for preenchido`() {
-        val grpcRequest = KeyManagerRequest.newBuilder()
+        val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(RANDOM)
             .setKeyValue("NOT_PERMITTED")
@@ -248,8 +248,8 @@ internal class CreateKeyGrpcServerTest(
     class Clients {
 
         @Singleton
-        fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel) : KeyManagerServiceBlockingStub?{
-            return KeyManagerServiceGrpc.newBlockingStub(channel)
+        fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel) : CreateKeyServiceBlockingStub?{
+            return CreateKeyServiceGrpc.newBlockingStub(channel)
         }
     }
 }
