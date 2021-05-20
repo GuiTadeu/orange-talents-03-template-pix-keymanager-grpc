@@ -1,13 +1,3 @@
-micronaut:
-  application:
-    name: keymanager
-
-grpc:
-  server:
-    port: 50051
-    keep-alive-time: 3h
-    max-inbound-message-size: 1024
-
 datasources:
   default:
     url: jdbc:h2:mem:keymanager;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
@@ -23,6 +13,3 @@ jpa:
       packages: 'com.orange.keymanager.models'
 
 jpa.default.properties.hibernate.hbm2ddl.auto: update
-
-jackson:
-  serializationInclusion: ALWAYS

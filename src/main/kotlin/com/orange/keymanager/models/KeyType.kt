@@ -1,25 +1,38 @@
 package com.orange.keymanager.models
 
+
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator
+import org.hibernate.validator.internal.constraintvalidators.hv.br.CPFValidator
+
 enum class KeyType {
 
     CPF {
         override fun isValid(value: String?): Boolean {
-            value ?: return false
-            return value.matches(Regex("^[0-9]{11}\$"))
+            if(value.isNullOrBlank()) return false
+
+            return CPFValidator().run {
+                initialize(null)
+                isValid(value, null)
+            }
         }
     },
 
     PHONE_NUMBER {
         override fun isValid(value: String?): Boolean {
-            value ?: return false
+            if(value.isNullOrBlank()) return false
+
             return value.matches(Regex("^\\+[1-9][0-9]\\d{1,14}\$"))
         }
     },
 
     EMAIL {
         override fun isValid(value: String?): Boolean {
-            value ?: return false
-            return value.matches(Regex("^[A-Za-z0-9+_.-]+@(.+)\$"))
+            if(value.isNullOrBlank()) return false
+
+            return EmailValidator().run {
+                initialize(null)
+                isValid(value, null)
+            }
         }
     },
 

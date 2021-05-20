@@ -7,12 +7,13 @@ import com.orange.keymanager.models.*
 import com.orange.keymanager.rest.ItauErpRestClient
 import io.grpc.Status.*
 import io.grpc.stub.StreamObserver
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class CreateKeyGrpcServer(
-    private val itauErpRestClient: ItauErpRestClient,
-    private val pixClientRepository: PixClientRepository) : KeyManagerServiceGrpc.KeyManagerServiceImplBase() {
+    val itauErpRestClient: ItauErpRestClient,
+    @Inject val pixClientRepository: PixClientRepository) : KeyManagerServiceGrpc.KeyManagerServiceImplBase() {
 
     override fun createKey(request: KeyManagerRequest, responseObserver: StreamObserver<KeyManagerResponse>?) {
 
@@ -47,11 +48,11 @@ class CreateKeyGrpcServer(
             accountType = convertedAccountType
         )
 
-        val savedPixClientKey = pixClientRepository.save(pixClientKey)
+        pixClientRepository.save(pixClientKey)
 
         val response = KeyManagerResponse.newBuilder()
-            .setKeyId(savedPixClientKey.id!!)
-            .setKeyValue(savedPixClientKey.keyValue)
+            .setKeyId(pixClientKey.id!!)
+            .setKeyValue(pixClientKey.keyValue)
             .setKeyType(request.keyType)
             .setAccountType(request.accountType)
             .build()
