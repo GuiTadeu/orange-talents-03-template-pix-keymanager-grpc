@@ -5,6 +5,7 @@ import com.orange.keymanager.CreateKeyResponse
 import com.orange.keymanager.CreateKeyServiceGrpc
 import com.orange.keymanager.models.*
 import com.orange.keymanager.rest.ItauErpRestClient
+import io.grpc.Status
 import io.grpc.Status.*
 import io.grpc.stub.StreamObserver
 import javax.inject.Inject
@@ -21,19 +22,19 @@ class CreateKeyGrpcServer(
         val convertedAccountType = request.getConvertedAccountType()
 
         if(!convertedKeyType.isValid(request.keyValue)) {
-            GrpcRuntimeError.throwError(INVALID_ARGUMENT, "Invalid key value", responseObserver)
+            throwError(INVALID_ARGUMENT, "Invalid key value", responseObserver)
         }
 
         if(convertedKeyType != KeyType.RANDOM) {
             if (pixClientRepository.findByKeyValue(request.keyValue).isPresent) {
-                GrpcRuntimeError.throwError(ALREADY_EXISTS, "Pix key already registered", responseObserver)
+                throwError(ALREADY_EXISTS, "Pix key already registered", responseObserver)
             }
         }
 
         try {
             itauErpRestClient.findByClientId(request.clientId)
         } catch(exception: Exception) {
-            GrpcRuntimeError.throwError(NOT_FOUND, "Client ID not exists", responseObserver)
+            throwError(NOT_FOUND, "Client ID not exists", responseObserver)
         }
 
         val keyValue = GenerateKeyValue.generate(
@@ -67,5 +68,14 @@ class CreateKeyGrpcServer(
 
     private fun CreateKeyRequest.getConvertedAccountType() : AccountType {
         return AccountType.valueOf(this.accountType.toString())
+    }
+
+    private fun throwError(status: Status, description: String, responseObserver: StreamObserver<CreateKeyResponse>?) {
+        responseObserver?.onError(
+            status
+                .withDescription(description)
+                .asRuntimeException()
+        )
+        return
     }
 }

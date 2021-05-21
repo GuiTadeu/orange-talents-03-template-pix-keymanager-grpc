@@ -10,4 +10,7 @@ interface PixClientRepository : CrudRepository<PixClientKey, Long> {
 
     @Executable
     fun findByKeyValue(keyValue: String): Optional<PixClientKey>
+
+    @Executable
+    fun findByIdAndClientId(id: Long, clientId: String): Optional<PixClientKey>
 }
