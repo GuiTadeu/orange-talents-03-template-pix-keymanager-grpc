@@ -18,6 +18,7 @@ import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,8 +44,13 @@ internal class CreateKeyGrpcServerTest(
         pixClientRepository.deleteAll()
     }
 
+    @AfterEach
+    fun cleanUp() {
+        pixClientRepository.deleteAll()
+    }
+
     @Test
-    internal fun `deve dar erro ao tentar cadastrar chave já existente`() {
+    internal fun `deve dar erro ao tentar cadastrar chave ja existente`() {
         val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(CPF)
@@ -245,7 +251,7 @@ internal class CreateKeyGrpcServerTest(
     }
 
     @Factory
-    class Clients {
+    class CreateKeyClient {
 
         @Singleton
         fun blockingStub(@GrpcChannel(GrpcServerChannel.NAME) channel: ManagedChannel) : CreateKeyServiceBlockingStub?{
