@@ -8,8 +8,10 @@ import com.orange.keymanager.KeyType.*
 import com.orange.keymanager.models.AccountType
 import com.orange.keymanager.models.KeyType
 import com.orange.keymanager.models.PixClientRepository
+import com.orange.keymanager.rest.Bank
 import com.orange.keymanager.rest.ItauErpRestClient
-import com.orange.keymanager.rest.ItauFoundClientIdResponse
+import com.orange.keymanager.rest.ItauFoundClientAccountResponse
+import com.orange.keymanager.rest.ItauOwner
 import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
@@ -19,7 +21,8 @@ import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -38,8 +41,16 @@ internal class CreateKeyGrpcServerTest(
 
     @BeforeEach
     fun setup() {
-        Mockito.`when`(erpClient.findByClientId(clientId))
-            .thenReturn(ItauFoundClientIdResponse(clientId))
+        val itauFoundClientAccountResponse = ItauFoundClientAccountResponse(
+            agencia = "0001",
+            numero = "291900",
+            tipo = AccountType.CONTA_CORRENTE,
+            instituicao = Bank(nome = "ITAÚ UNIBANCO S.A.", ispb = "60701190"),
+            titular = ItauOwner(id = "c56dfef4-7901-44fb-84e2-a2cefb157890", nome = "Jubileu Irineu da Silva", cpf = "02467781054")
+        )
+
+        Mockito.`when`(erpClient.getClientByIdAndAccountType(clientId, AccountType.CONTA_CORRENTE))
+            .thenReturn(itauFoundClientAccountResponse)
 
         pixClientRepository.deleteAll()
     }
@@ -85,7 +96,7 @@ internal class CreateKeyGrpcServerTest(
             .setAccountType(CONTA_CORRENTE)
             .build()
 
-        Mockito.`when`(erpClient.findByClientId(clientId)).thenThrow(RuntimeException())
+        Mockito.`when`(erpClient.getClientByIdAndAccountType(clientId, AccountType.CONTA_CORRENTE)).thenThrow(RuntimeException())
 
         val error = assertThrows<StatusRuntimeException> {
             grpcClient.createKey(grpcRequest)
@@ -93,7 +104,7 @@ internal class CreateKeyGrpcServerTest(
 
         with(error) {
             assertEquals(Status.NOT_FOUND.code, status.code)
-            assertEquals("Client ID not exists", status.description)
+            assertEquals("Client not exists with this accountType", status.description)
         }
     }
 

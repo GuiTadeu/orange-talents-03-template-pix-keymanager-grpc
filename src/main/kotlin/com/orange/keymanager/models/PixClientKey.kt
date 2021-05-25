@@ -10,7 +10,7 @@ import javax.validation.constraints.Size
 class PixClientKey(
     @field:NotNull val clientId: String,
     @field:NotNull @Enumerated(EnumType.STRING) val keyType: KeyType,
-    @field:NotBlank @field:Size(max = 77) val keyValue: String,
+    @field:NotBlank @field:Size(max = 77) var keyValue: String,
     @field:NotNull @Enumerated(EnumType.STRING) val accountType: AccountType) {
 
     @field:Id @field:GeneratedValue(strategy = IDENTITY) val id: Long? = null
