@@ -13,5 +13,5 @@ class PixClientKey(
     @field:NotBlank @field:Size(max = 77) var keyValue: String,
     @field:NotNull @Enumerated(EnumType.STRING) val accountType: AccountType) {
 
-    @field:Id @field:GeneratedValue(strategy = IDENTITY) val id: Long? = null
+    @field:Id @field:GeneratedValue(strategy = IDENTITY) var id: Long? = null
 }

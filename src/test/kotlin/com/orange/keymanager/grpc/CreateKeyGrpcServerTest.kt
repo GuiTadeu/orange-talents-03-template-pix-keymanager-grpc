@@ -8,34 +8,37 @@ import com.orange.keymanager.KeyType.*
 import com.orange.keymanager.models.AccountType
 import com.orange.keymanager.models.KeyType
 import com.orange.keymanager.models.PixClientRepository
-import com.orange.keymanager.rest.Bank
-import com.orange.keymanager.rest.ItauErpRestClient
-import com.orange.keymanager.rest.ItauFoundClientAccountResponse
-import com.orange.keymanager.rest.ItauOwner
+import com.orange.keymanager.rest.*
 import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import io.kotlintest.specs.BehaviorSpec
 import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.micronaut.test.extensions.kotlintest.MicronautKotlinTestExtension.getMock
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito
+import java.time.LocalDateTime
 import java.util.*
+import javax.inject.Inject
 import javax.inject.Singleton
 
-@MicronautTest(transactional = false)
-internal class CreateKeyGrpcServerTest(
+@MicronautTest
+class CreateKeyGrpcServerTest(
     private val grpcClient: CreateKeyServiceBlockingStub,
-    private val erpClient: ItauErpRestClient,
-    private val pixClientRepository: PixClientRepository
-) {
+    private val pixClientRepository: PixClientRepository): BehaviorSpec() {
+
+    @Inject lateinit var erpClient: ItauErpRestClient
+    @Inject lateinit var bcbClient: BcbPixRestClient
 
     private var clientId: String = UUID.randomUUID().toString()
 
@@ -49,8 +52,8 @@ internal class CreateKeyGrpcServerTest(
             titular = ItauOwner(id = "c56dfef4-7901-44fb-84e2-a2cefb157890", nome = "Jubileu Irineu da Silva", cpf = "02467781054")
         )
 
-        Mockito.`when`(erpClient.getClientByIdAndAccountType(clientId, AccountType.CONTA_CORRENTE))
-            .thenReturn(itauFoundClientAccountResponse)
+        every { getMock(erpClient).getClientByIdAndAccountType(clientId, AccountType.CONTA_CORRENTE) }
+            .returns(itauFoundClientAccountResponse)
 
         pixClientRepository.deleteAll()
     }
@@ -68,6 +71,15 @@ internal class CreateKeyGrpcServerTest(
             .setKeyValue("308.972.740-40")
             .setAccountType(CONTA_CORRENTE)
             .build()
+
+        every { bcbClient.saveKey(any()) } answers {
+            BcbSaveKeyResponse(
+                KeyType.CPF, "308.972.740-40",
+                BankAccount("60701190", "0001", "291900", BcbAccountType.CACC),
+                BcbOwner(PersonType.LEGAL_PERSON, "Jubileu Irineu da Silva", "02467781054"),
+                LocalDateTime.now()
+            )
+        }
 
         val grpcResponse = grpcClient.createKey(grpcRequest)
         val savedPixKey = pixClientRepository.findById(grpcResponse.keyId).get()
@@ -96,7 +108,8 @@ internal class CreateKeyGrpcServerTest(
             .setAccountType(CONTA_CORRENTE)
             .build()
 
-        Mockito.`when`(erpClient.getClientByIdAndAccountType(clientId, AccountType.CONTA_CORRENTE)).thenThrow(RuntimeException())
+        every { erpClient.getClientByIdAndAccountType(clientId, AccountType.CONTA_CORRENTE) }
+            .throws(RuntimeException())
 
         val error = assertThrows<StatusRuntimeException> {
             grpcClient.createKey(grpcRequest)
@@ -116,6 +129,15 @@ internal class CreateKeyGrpcServerTest(
             .setKeyValue("308.972.740-40")
             .setAccountType(CONTA_CORRENTE)
             .build()
+
+        every { bcbClient.saveKey(any()) } answers {
+            BcbSaveKeyResponse(
+                KeyType.CPF, "308.972.740-40",
+                BankAccount("60701190", "0001", "291900", BcbAccountType.CACC),
+                BcbOwner(PersonType.LEGAL_PERSON, "Jubileu Irineu da Silva", "02467781054"),
+                LocalDateTime.now()
+            )
+        }
 
         val grpcResponse = grpcClient.createKey(grpcRequest)
         val savedPixKey = pixClientRepository.findById(grpcResponse.keyId).get()
@@ -154,6 +176,15 @@ internal class CreateKeyGrpcServerTest(
             .setAccountType(CONTA_CORRENTE)
             .build()
 
+        every { bcbClient.saveKey(any()) } answers {
+            BcbSaveKeyResponse(
+                KeyType.PHONE_NUMBER, "+5511940028922",
+                BankAccount("60701190", "0001", "291900", BcbAccountType.CACC),
+                BcbOwner(PersonType.LEGAL_PERSON, "Jubileu Irineu da Silva", "02467781054"),
+                LocalDateTime.now()
+            )
+        }
+
         val grpcResponse = grpcClient.createKey(grpcRequest)
         val savedPixKey = pixClientRepository.findById(grpcResponse.keyId).get()
 
@@ -190,6 +221,15 @@ internal class CreateKeyGrpcServerTest(
             .setKeyValue("jubileu@gmail.com")
             .setAccountType(CONTA_CORRENTE)
             .build()
+
+        every { bcbClient.saveKey(any()) } answers {
+            BcbSaveKeyResponse(
+                KeyType.EMAIL, "jubileu@gmail.com",
+                BankAccount("60701190", "0001", "291900", BcbAccountType.CACC),
+                BcbOwner(PersonType.LEGAL_PERSON, "Jubileu Irineu da Silva", "02467781054"),
+                LocalDateTime.now()
+            )
+        }
 
         val grpcResponse = grpcClient.createKey(grpcRequest)
         val savedPixKey = pixClientRepository.findById(grpcResponse.keyId).get()
@@ -228,6 +268,15 @@ internal class CreateKeyGrpcServerTest(
             .setAccountType(CONTA_CORRENTE)
             .build()
 
+        every { bcbClient.saveKey(any()) } answers {
+            BcbSaveKeyResponse(
+                KeyType.RANDOM, UUID.randomUUID().toString(),
+                BankAccount("60701190", "0001", "291900", BcbAccountType.CACC),
+                BcbOwner(PersonType.LEGAL_PERSON, "Jubileu Irineu da Silva", "02467781054"),
+                LocalDateTime.now()
+            )
+        }
+
         val grpcResponse = grpcClient.createKey(grpcRequest)
         val savedPixKey = pixClientRepository.findById(grpcResponse.keyId).get()
 
@@ -238,7 +287,7 @@ internal class CreateKeyGrpcServerTest(
     }
 
     @Test
-    internal fun `nao deve criar chave aleatoria se o keyValue for preenchido`() {
+    internal fun `nao deve criar chave RANDOM se o keyValue for preenchido`() {
         val grpcRequest = CreateKeyRequest.newBuilder()
             .setClientId(clientId)
             .setKeyType(RANDOM)
@@ -256,9 +305,35 @@ internal class CreateKeyGrpcServerTest(
         }
     }
 
+    @Test
+    internal fun `deve abortar a operacao caso o BCB nao salve a chave`() {
+        val grpcRequest = CreateKeyRequest.newBuilder()
+            .setClientId(clientId)
+            .setKeyType(EMAIL)
+            .setKeyValue("jubileu@gmail.com")
+            .setAccountType(CONTA_CORRENTE)
+            .build()
+
+        every { bcbClient.saveKey(any()) }.throws(RuntimeException())
+
+        val error = assertThrows<StatusRuntimeException> {
+            grpcClient.createKey(grpcRequest)
+        }
+
+        with(error) {
+            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals("Error trying to save on bcb", status.description)
+        }
+    }
+
     @MockBean(ItauErpRestClient::class)
     fun erpClientMock(): ItauErpRestClient {
-        return Mockito.mock(ItauErpRestClient::class.java)
+        return mockk()
+    }
+
+    @MockBean(BcbPixRestClient::class)
+    fun bcbClientMock(): BcbPixRestClient {
+        return mockk()
     }
 
     @Factory

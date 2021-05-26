@@ -22,7 +22,6 @@ class CreateKeyGrpcServer(
         val convertedKeyType = request.getConvertedKeyType()
         val convertedAccountType = request.getConvertedAccountType()
         var itauClient: ItauFoundClientAccountResponse? = null
-        var bcbClient: BcbSaveKeyResponse? = null
 
         if (!convertedKeyType.isValid(request.keyValue)) {
             throwError(INVALID_ARGUMENT, "Invalid key value", responseObserver)
@@ -56,12 +55,6 @@ class CreateKeyGrpcServer(
             )
         )
 
-        try {
-            bcbClient = bcbPixRestClient.saveKey(bcbSaveKeyRequest)
-        } catch (exception: Exception) {
-            throwError(ABORTED, "Error trying to save on bcb", responseObserver)
-        }
-
         val pixClientKey = PixClientKey(
             clientId = request.clientId,
             keyValue = request.keyValue,
@@ -69,8 +62,14 @@ class CreateKeyGrpcServer(
             accountType = convertedAccountType
         )
 
-        if (bcbClient!!.keyType == KeyType.RANDOM) {
-            pixClientKey.keyValue = bcbClient.key
+        try {
+            val bcbClient = bcbPixRestClient.saveKey(bcbSaveKeyRequest)
+
+            if (convertedKeyType == KeyType.RANDOM)
+                pixClientKey.keyValue = bcbClient.key
+
+        } catch (exception: Exception) {
+            throwError(ABORTED, "Error trying to save on bcb", responseObserver)
         }
 
         pixClientRepository.save(pixClientKey)

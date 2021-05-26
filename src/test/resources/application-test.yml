@@ -6,7 +6,7 @@ grpc:
 
 datasources:
   default:
-    url: jdbc:h2:mem:keymanager;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:keymanagerTestDb;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
     driverClassName: org.h2.Driver
     username: root
     password: 'root'

@@ -6,46 +6,44 @@ import com.orange.keymanager.models.AccountType.CONTA_CORRENTE
 import com.orange.keymanager.models.KeyType.EMAIL
 import com.orange.keymanager.models.PixClientKey
 import com.orange.keymanager.models.PixClientRepository
+import com.orange.keymanager.rest.BcbPixRestClient
 import com.orange.keymanager.rest.ItauErpRestClient
 import com.orange.keymanager.rest.ItauFoundClientIdResponse
 import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import io.kotlintest.specs.BehaviorSpec
 import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
 import io.micronaut.grpc.server.GrpcServerChannel
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito
 import java.util.*
 import javax.inject.Singleton
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import java.lang.RuntimeException
+import javax.inject.Inject
 
-@MicronautTest(transactional = false)
+@MicronautTest
 class DeleteKeyGrpcServerTest(
-    private val grpcClient: DeleteKeyServiceBlockingStub,
-    private val erpClient: ItauErpRestClient,
-    private val pixClientRepository: PixClientRepository
-) {
+    private val grpcClient: DeleteKeyServiceBlockingStub): BehaviorSpec() {
+
+    @Inject lateinit var erpClient: ItauErpRestClient
+    @Inject lateinit var bcbClient: BcbPixRestClient
+    @Inject lateinit var pixClientRepository: PixClientRepository
 
     private var clientId: String = UUID.randomUUID().toString()
 
     @BeforeEach
     fun setup() {
-        Mockito.`when`(erpClient.findByClientId(clientId))
-            .thenReturn(ItauFoundClientIdResponse(clientId))
-
-        pixClientRepository.deleteAll()
-    }
-
-    @AfterEach
-    fun cleanUp() {
-        pixClientRepository.deleteAll()
+        every { erpClient.findByClientId(clientId) }
+            .returns(ItauFoundClientIdResponse(clientId))
     }
 
     @Test
@@ -66,31 +64,14 @@ class DeleteKeyGrpcServerTest(
     }
 
     @Test
-    fun `deve retornar erro quando nao encontrar a chave Pix`() {
+    fun `deve retornar erro quando a chave Pix nao pertencer ao cliente`() {
         val grpcRequest = DeleteKeyRequest.newBuilder()
             .setClientId(clientId)
-            .setKeyId(Long.MIN_VALUE)
+            .setKeyId(1L)
             .build()
 
-        val error = assertThrows<StatusRuntimeException> {
-            grpcClient.deleteKey(grpcRequest)
-        }
-
-        with(error) {
-            assertEquals(Status.NOT_FOUND.code, status.code)
-            assertEquals("Key ID not exists", status.description)
-        }
-    }
-
-    @Test
-    fun `deve retornar erro quando a chave Pix nao pertencer ao cliente`() {
-
-        val savedPixKey = pixClientRepository.save(PixClientKey(clientId, EMAIL, "jubileu@gmail.com", CONTA_CORRENTE))
-
-        val grpcRequest = DeleteKeyRequest.newBuilder()
-            .setClientId(UUID.randomUUID().toString())
-            .setKeyId(savedPixKey.id!!)
-            .build()
+        every { pixClientRepository.findByIdAndClientId(any(), clientId) }
+            .returns(Optional.empty())
 
         val error = assertThrows<StatusRuntimeException> {
             grpcClient.deleteKey(grpcRequest)
@@ -103,9 +84,16 @@ class DeleteKeyGrpcServerTest(
     }
 
     @Test
-    fun `deve deletar chave Pix no banco`() {
-        val savedPixKey = pixClientRepository.save(PixClientKey(clientId, EMAIL, "jubileu@gmail.com", CONTA_CORRENTE))
-        assertTrue(pixClientRepository.findById(savedPixKey.id!!).isPresent)
+    fun `deve deletar chave Pix na aplicacao`() {
+        val savedPixKey = PixClientKey(clientId, EMAIL, "jubileu@gmail.com", CONTA_CORRENTE)
+        savedPixKey.id = 42L
+
+        every { pixClientRepository.findByIdAndClientId(any(), clientId) }
+            .returns(Optional.of(savedPixKey))
+
+        every { bcbClient.existsKeyValue(any()) }.answers{}
+        every { bcbClient.deleteKeyValue(any(), any()) }.answers{}
+        every { pixClientRepository.deleteById(any()) }.answers{}
 
         val grpcRequest = DeleteKeyRequest.newBuilder()
             .setClientId(clientId)
@@ -113,12 +101,75 @@ class DeleteKeyGrpcServerTest(
             .build()
 
         val grpcResponse = grpcClient.deleteKey(grpcRequest)
-        assertTrue(pixClientRepository.findById(grpcResponse.deletedKeyId).isEmpty)
+        assertTrue(grpcResponse.deletedKeyId == savedPixKey.id)
+    }
+
+    @Test
+    fun `deve abortar a operacao caso nao exista a chave no BCB`() {
+        val savedPixKey = PixClientKey(clientId, EMAIL, "jubileu@gmail.com", CONTA_CORRENTE)
+        savedPixKey.id = 42L
+
+        every { pixClientRepository.findByIdAndClientId(any(), clientId) }
+            .returns(Optional.of(savedPixKey))
+
+        every { bcbClient.existsKeyValue(any()) }.throws(RuntimeException())
+
+        val grpcRequest = DeleteKeyRequest.newBuilder()
+            .setClientId(clientId)
+            .setKeyId(savedPixKey.id!!)
+            .build()
+
+        val error = assertThrows<StatusRuntimeException> {
+            grpcClient.deleteKey(grpcRequest)
+        }
+
+        with(error) {
+            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals("Key value does not exists in BCB", status.description)
+        }
+    }
+
+    @Test
+    fun `deve abortar a operacao caso o BCB nao delete a chave`() {
+        val savedPixKey = PixClientKey(clientId, EMAIL, "jubileu@gmail.com", CONTA_CORRENTE)
+        savedPixKey.id = 42L
+
+        every { pixClientRepository.findByIdAndClientId(any(), clientId) }
+            .returns(Optional.of(savedPixKey))
+
+        every { bcbClient.existsKeyValue(any()) }.answers{}
+
+        every { bcbClient.deleteKeyValue(any(), any()) }
+            .throws(RuntimeException())
+
+        val grpcRequest = DeleteKeyRequest.newBuilder()
+            .setClientId(clientId)
+            .setKeyId(savedPixKey.id!!)
+            .build()
+
+        val error = assertThrows<StatusRuntimeException> {
+            grpcClient.deleteKey(grpcRequest)
+        }
+
+        with(error) {
+            assertEquals(Status.ABORTED.code, status.code)
+            assertEquals("It was not possible to delete the key in the bcb, try again...", status.description)
+        }
     }
 
     @MockBean(ItauErpRestClient::class)
     fun erpClientMock(): ItauErpRestClient {
-        return Mockito.mock(ItauErpRestClient::class.java)
+        return mockk()
+    }
+
+    @MockBean(BcbPixRestClient::class)
+    fun bcbClientMock(): BcbPixRestClient {
+        return mockk()
+    }
+
+    @MockBean(PixClientRepository::class)
+    fun pixClientRepositoryMock(): PixClientRepository {
+        return mockk()
     }
 
     @Factory
@@ -129,5 +180,4 @@ class DeleteKeyGrpcServerTest(
             return DeleteKeyServiceGrpc.newBlockingStub(channel)
         }
     }
-
 }
