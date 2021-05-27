@@ -1,7 +1,7 @@
 package com.orange.keymanager.grpc
 
-import com.orange.keymanager.DeleteKeyRequest
-import com.orange.keymanager.DeleteKeyResponse
+import com.orange.keymanager.DeleteKeyMessage.DeleteKeyRequest
+import com.orange.keymanager.DeleteKeyMessage.DeleteKeyResponse
 import com.orange.keymanager.DeleteKeyServiceGrpc.DeleteKeyServiceImplBase
 import com.orange.keymanager.models.PixClientRepository
 import com.orange.keymanager.rest.BcbDeleteKeyRequest
@@ -34,7 +34,7 @@ class DeleteKeyGrpcServer(
         val pixClient = foundPixClient.get()
 
         try {
-            bcbPixRestClient.existsKeyValue(pixClient.keyValue)
+            bcbPixRestClient.searchKeyValue(pixClient.keyValue)
         } catch (exception: Exception) {
             throwError(ABORTED, "Key value does not exists in BCB", responseObserver)
             return

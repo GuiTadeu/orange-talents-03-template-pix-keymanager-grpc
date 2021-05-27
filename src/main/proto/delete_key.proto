@@ -5,17 +5,19 @@ option java_outer_classname = "DeleteKey";
 
 package com.orange.keymanager;
 
-import "google/protobuf/any.proto";
-
 service DeleteKeyService {
-    rpc deleteKey (DeleteKeyRequest) returns (DeleteKeyResponse) {}
+    rpc deleteKey (DeleteKeyMessage.DeleteKeyRequest) returns (DeleteKeyMessage.DeleteKeyResponse) {}
 }
 
-message DeleteKeyRequest {
-    string client_id = 1;
-    int64 key_id = 2;
+message DeleteKeyMessage {
+
+    message DeleteKeyRequest {
+        string client_id = 1;
+        int64 key_id = 2;
+    }
+
+    message DeleteKeyResponse {
+        int64 deleted_key_id = 1;
+    }
 }
 
-message DeleteKeyResponse {
-    int64 deleted_key_id = 1;
-}

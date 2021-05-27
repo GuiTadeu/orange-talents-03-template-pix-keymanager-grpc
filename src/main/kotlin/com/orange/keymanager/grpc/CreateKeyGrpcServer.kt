@@ -1,7 +1,7 @@
 package com.orange.keymanager.grpc
 
-import com.orange.keymanager.CreateKeyRequest
-import com.orange.keymanager.CreateKeyResponse
+import com.orange.keymanager.CreateKeyMessage.CreateKeyRequest
+import com.orange.keymanager.CreateKeyMessage.CreateKeyResponse
 import com.orange.keymanager.CreateKeyServiceGrpc.CreateKeyServiceImplBase
 import com.orange.keymanager.models.*
 import com.orange.keymanager.rest.*

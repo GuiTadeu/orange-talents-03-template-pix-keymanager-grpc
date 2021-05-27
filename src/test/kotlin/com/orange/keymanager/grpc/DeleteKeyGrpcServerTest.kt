@@ -1,17 +1,17 @@
 package com.orange.keymanager.grpc
 
 import com.orange.keymanager.*
+import com.orange.keymanager.DeleteKeyMessage.DeleteKeyRequest
 import com.orange.keymanager.DeleteKeyServiceGrpc.DeleteKeyServiceBlockingStub
 import com.orange.keymanager.models.AccountType.CONTA_CORRENTE
 import com.orange.keymanager.models.KeyType.EMAIL
 import com.orange.keymanager.models.PixClientKey
 import com.orange.keymanager.models.PixClientRepository
-import com.orange.keymanager.rest.BcbPixRestClient
-import com.orange.keymanager.rest.ItauErpRestClient
-import com.orange.keymanager.rest.ItauFoundClientIdResponse
+import com.orange.keymanager.rest.*
 import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import io.kotlintest.forAny
 import io.kotlintest.specs.BehaviorSpec
 import io.micronaut.context.annotation.Factory
 import io.micronaut.grpc.annotation.GrpcChannel
@@ -91,7 +91,7 @@ class DeleteKeyGrpcServerTest(
         every { pixClientRepository.findByIdAndClientId(any(), clientId) }
             .returns(Optional.of(savedPixKey))
 
-        every { bcbClient.existsKeyValue(any()) }.answers{}
+        every { bcbClient.searchKeyValue(any()) }.answers{ mockk() }
         every { bcbClient.deleteKeyValue(any(), any()) }.answers{}
         every { pixClientRepository.deleteById(any()) }.answers{}
 
@@ -112,7 +112,7 @@ class DeleteKeyGrpcServerTest(
         every { pixClientRepository.findByIdAndClientId(any(), clientId) }
             .returns(Optional.of(savedPixKey))
 
-        every { bcbClient.existsKeyValue(any()) }.throws(RuntimeException())
+        every { bcbClient.searchKeyValue(any()) }.throws(RuntimeException())
 
         val grpcRequest = DeleteKeyRequest.newBuilder()
             .setClientId(clientId)
@@ -137,7 +137,7 @@ class DeleteKeyGrpcServerTest(
         every { pixClientRepository.findByIdAndClientId(any(), clientId) }
             .returns(Optional.of(savedPixKey))
 
-        every { bcbClient.existsKeyValue(any()) }.answers{}
+        every { bcbClient.searchKeyValue(any()) } answers { mockk() }
 
         every { bcbClient.deleteKeyValue(any(), any()) }
             .throws(RuntimeException())

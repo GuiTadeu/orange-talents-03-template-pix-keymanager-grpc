@@ -1,10 +1,10 @@
 package com.orange.keymanager.grpc
 
-import com.orange.keymanager.AccountType.CONTA_CORRENTE
-import com.orange.keymanager.CreateKeyRequest
+import com.orange.keymanager.CreateKeyMessage.AccountType.CONTA_CORRENTE
+import com.orange.keymanager.CreateKeyMessage.CreateKeyRequest
+import com.orange.keymanager.CreateKeyMessage.KeyType.*
 import com.orange.keymanager.CreateKeyServiceGrpc
 import com.orange.keymanager.CreateKeyServiceGrpc.CreateKeyServiceBlockingStub
-import com.orange.keymanager.KeyType.*
 import com.orange.keymanager.models.AccountType
 import com.orange.keymanager.models.KeyType
 import com.orange.keymanager.models.PixClientRepository

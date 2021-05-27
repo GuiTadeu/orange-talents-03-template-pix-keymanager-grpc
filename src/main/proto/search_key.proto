@@ -1,0 +1,66 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package com.orange.keymanager;
+
+service SearchKeyService {
+
+    rpc searchKey (SearchKeyMessage.SearchKeyRequest) returns (SearchKeyMessage.SearchKeyResponse) {}
+    rpc internalSearchKey (SearchKeyMessage.InternalSearchKeyRequest) returns (SearchKeyMessage.InternalSearchKeyResponse) {}
+}
+
+message SearchKeyMessage {
+
+    message InternalSearchKeyRequest {
+        string client_id = 1;
+        int64 key_id = 2;
+    }
+
+    message InternalSearchKeyResponse {
+        int64 key_id = 1;
+        string client_id = 2;
+        KeyType key_type = 3;
+        string key_value = 4;
+        PixOwner owner = 5;
+        PixBank bank = 6;
+        string created_at = 7;
+    }
+
+    message SearchKeyRequest {
+        string key_value = 1;
+    }
+
+    message SearchKeyResponse {
+        KeyType key_type = 1;
+        string key_value = 2;
+        PixOwner owner = 3;
+        PixBank bank = 4;
+        string created_at = 5;
+    }
+
+    enum KeyType {
+        CPF = 0;
+        PHONE_NUMBER = 1;
+        EMAIL = 2;
+        RANDOM = 3;
+    }
+
+    message PixOwner {
+        string name = 1;
+        string cpf = 2;
+    }
+
+    message PixBank {
+        string name = 1;
+        string branch = 2;
+        string account_number = 3;
+        AccountType account_type = 4;
+    }
+
+    enum AccountType {
+        CONTA_CORRENTE = 0;
+        CONTA_POUPANCA = 1;
+    }
+}
+
+
+

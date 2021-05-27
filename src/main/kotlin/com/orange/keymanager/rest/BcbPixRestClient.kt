@@ -1,5 +1,8 @@
 package com.orange.keymanager.rest
 
+import com.orange.keymanager.models.AccountType
+import com.orange.keymanager.models.AccountType.CONTA_CORRENTE
+import com.orange.keymanager.models.AccountType.CONTA_POUPANCA
 import com.orange.keymanager.models.KeyType
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.http.MediaType.APPLICATION_XML
@@ -16,7 +19,7 @@ interface BcbPixRestClient {
     fun saveKey(@Body request: BcbSaveKeyRequest): BcbSaveKeyResponse
 
     @Get("/pix/keys/{keyValue}")
-    fun existsKeyValue(@PathVariable keyValue: String)
+    fun searchKeyValue(@PathVariable keyValue: String): BcbSearchKeyResponse
 
     @Delete("/pix/keys/{keyValue}")
     fun deleteKeyValue(@PathVariable keyValue: String, @Body request: BcbDeleteKeyRequest)
@@ -38,6 +41,15 @@ class BcbSaveKeyRequest(
 
 @Introspected
 class BcbSaveKeyResponse(
+    val keyType: KeyType,
+    val key: String,
+    val bankAccount: BankAccount,
+    val owner: BcbOwner,
+    val createdAt: LocalDateTime
+)
+
+@Introspected
+class BcbSearchKeyResponse(
     val keyType: KeyType,
     val key: String,
     val bankAccount: BankAccount,
@@ -68,5 +80,15 @@ enum class PersonType {
 
 @Introspected
 enum class BcbAccountType {
-    CACC, SVGS
+    CACC {
+        override fun getApplicationAccountType(): AccountType {
+            return CONTA_CORRENTE
+        }
+    }, SVGS {
+        override fun getApplicationAccountType(): AccountType {
+            return CONTA_POUPANCA
+        }
+    };
+
+    abstract fun getApplicationAccountType(): AccountType
 }

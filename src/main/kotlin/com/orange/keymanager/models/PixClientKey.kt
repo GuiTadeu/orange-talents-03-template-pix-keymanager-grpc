@@ -1,5 +1,6 @@
 package com.orange.keymanager.models
 
+import java.time.LocalDateTime
 import javax.persistence.*
 import javax.persistence.GenerationType.IDENTITY
 import javax.validation.constraints.NotBlank
@@ -14,4 +15,6 @@ class PixClientKey(
     @field:NotNull @Enumerated(EnumType.STRING) val accountType: AccountType) {
 
     @field:Id @field:GeneratedValue(strategy = IDENTITY) var id: Long? = null
+
+    val createdAt: LocalDateTime = LocalDateTime.now()
 }

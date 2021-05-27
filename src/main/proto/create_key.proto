@@ -1,38 +1,36 @@
 syntax = "proto3";
-
 option java_multiple_files = true;
-option java_outer_classname = "CreateKey";
-
 package com.orange.keymanager;
 
-import "google/protobuf/any.proto";
-
 service CreateKeyService {
-    rpc createKey (CreateKeyRequest) returns (CreateKeyResponse) {}
+    rpc createKey (CreateKeyMessage.CreateKeyRequest) returns (CreateKeyMessage.CreateKeyResponse) {}
 }
 
-message CreateKeyRequest {
-    string client_id = 1;
-    KeyType key_type = 2;
-    string key_value = 3;
-    AccountType account_type = 4;
-}
+message CreateKeyMessage {
 
-message CreateKeyResponse {
-    int64 key_id = 1;
-    KeyType key_type = 2;
-    string key_value = 3;
-    AccountType account_type = 4;
-}
+    message CreateKeyRequest {
+        string client_id = 1;
+        KeyType key_type = 2;
+        string key_value = 3;
+        AccountType account_type = 4;
+    }
 
-enum AccountType {
-    CONTA_CORRENTE = 0;
-    CONTA_POUPANCA = 1;
-}
+    message CreateKeyResponse {
+        int64 key_id = 1;
+        KeyType key_type = 2;
+        string key_value = 3;
+        AccountType account_type = 4;
+    }
 
-enum KeyType {
-    CPF = 0;
-    PHONE_NUMBER = 1;
-    EMAIL = 2;
-    RANDOM = 3;
+    enum AccountType {
+        CONTA_CORRENTE = 0;
+        CONTA_POUPANCA = 1;
+    }
+
+    enum KeyType {
+        CPF = 0;
+        PHONE_NUMBER = 1;
+        EMAIL = 2;
+        RANDOM = 3;
+    }
 }
