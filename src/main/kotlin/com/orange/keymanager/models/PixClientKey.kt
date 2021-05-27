@@ -16,5 +16,5 @@ class PixClientKey(
 
     @field:Id @field:GeneratedValue(strategy = IDENTITY) var id: Long? = null
 
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    var createdAt: LocalDateTime = LocalDateTime.now()
 }
