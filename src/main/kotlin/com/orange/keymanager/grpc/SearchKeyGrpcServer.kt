@@ -24,7 +24,7 @@ class SearchKeyGrpcServer(
         try {
             itauErpRestClient.findByClientId(request.clientId)
         } catch (exception: Exception) {
-            throwClientsKeysError(Status.NOT_FOUND, "Client not exists with this accountType", responseObserver)
+            throwClientsKeysError(Status.NOT_FOUND, "Client not exists", responseObserver)
         }
 
         val keys = pixClientRepository.findByClientId(request.clientId)

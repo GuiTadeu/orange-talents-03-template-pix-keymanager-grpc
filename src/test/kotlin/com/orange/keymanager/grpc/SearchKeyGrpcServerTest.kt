@@ -1,8 +1,7 @@
 package com.orange.keymanager.grpc
 
 import com.orange.keymanager.SearchKeyMessage
-import com.orange.keymanager.SearchKeyMessage.InternalSearchKeyRequest
-import com.orange.keymanager.SearchKeyMessage.SearchKeyRequest
+import com.orange.keymanager.SearchKeyMessage.*
 import com.orange.keymanager.SearchKeyServiceGrpc
 import com.orange.keymanager.SearchKeyServiceGrpc.SearchKeyServiceBlockingStub
 import com.orange.keymanager.models.AccountType.CONTA_CORRENTE
@@ -38,7 +37,7 @@ internal class SearchKeyGrpcServerTest(
     @Inject lateinit var erpClient: ItauErpRestClient
     @Inject lateinit var pixClientRepository: PixClientRepository
 
-    // BEGIN INTERNAL SEARCH TESTS ################################################################
+    //region INTERNAL SEARCH TESTS
 
     @Test
     fun `deve retornar NOT_FOUND caso a keyId nao exista no banco da aplicacao`() {
@@ -155,11 +154,9 @@ internal class SearchKeyGrpcServerTest(
         }
     }
 
-    // END INTERNAL SEARCH TESTS ##################################################################
+    //endregion
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    // BEGIN SEARCH TESTS #########################################################################
+    //region SEARCH TESTS
 
     @Test
     fun `deve retornar INVALID_ARGUMENTS caso a keyValue tenha mais que 77 caracteres`() {
@@ -320,7 +317,87 @@ internal class SearchKeyGrpcServerTest(
         }
     }
 
-    // END SEARCH TESTS #########################################################################
+    //endregion
+
+    //region CLIENT KEYS TESTS
+
+    @Test
+    fun `deve dar erro se nao encontrar o cliente no ERP`() {
+        val ownerId = UUID.randomUUID().toString()
+
+        val request = ClientKeysRequest.newBuilder()
+            .setClientId(ownerId)
+            .build()
+
+        every { erpClient.findByClientId(request.clientId) }.throws(RuntimeException())
+
+        val error = assertThrows<StatusRuntimeException> {
+            grpcClient.clientKeys(request)
+        }
+
+        with(error) {
+            assertEquals(Status.NOT_FOUND.code, status.code)
+            assertEquals("Client not exists", status.description)
+        }
+    }
+
+    @Test
+    fun `deve retornar as chaves do banco de acordo com o clientId`() {
+        val ownerId = UUID.randomUUID().toString()
+
+        val request = ClientKeysRequest.newBuilder()
+            .setClientId(ownerId)
+            .build()
+
+        every { erpClient.findByClientId(request.clientId) } answers { mockk() }
+
+        every { pixClientRepository.findByClientId(ownerId) } answers {
+
+            val firstKey = PixClientKey(ownerId, KeyType.EMAIL, "jubileu@gmail.com", CONTA_CORRENTE)
+            val secondKey = PixClientKey(ownerId, KeyType.CPF, "50268375810", CONTA_CORRENTE)
+            val thirdKey = PixClientKey(ownerId, KeyType.PHONE_NUMBER, "+551140028922", CONTA_CORRENTE)
+
+            firstKey.id = 1L
+            secondKey.id = 2L
+            thirdKey.id = 3L
+
+            listOf(firstKey, secondKey, thirdKey)
+        }
+
+        val grpcResponse = grpcClient.clientKeys(request)
+
+        with(grpcResponse) {
+            assertEquals(clientId, ownerId)
+            assertEquals(keysCount, 3)
+            assertEquals(getKeys(0).keyValue, "jubileu@gmail.com")
+            assertEquals(getKeys(1).keyValue, "50268375810")
+            assertEquals(getKeys(2).keyValue, "+551140028922")
+        }
+    }
+
+    @Test
+    fun `deve retornar uma lista de chaves vazias com o clientId`() {
+        val ownerId = UUID.randomUUID().toString()
+
+        val request = ClientKeysRequest.newBuilder()
+            .setClientId(ownerId)
+            .build()
+
+        every { erpClient.findByClientId(request.clientId) } answers { mockk() }
+
+        every { pixClientRepository.findByClientId(ownerId) } answers {
+            emptyList()
+        }
+
+        val grpcResponse = grpcClient.clientKeys(request)
+
+        with(grpcResponse) {
+            assertEquals(clientId, ownerId)
+            assertEquals(keysCount, 0)
+        }
+    }
+
+    //endregion
 
     @MockBean(ItauErpRestClient::class)
     fun erpClientMock(): ItauErpRestClient {
