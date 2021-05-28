@@ -1,6 +1,7 @@
 package com.orange.keymanager.grpc
 
 import com.orange.keymanager.SearchKeyMessage.*
+import com.orange.keymanager.SearchKeyMessage.ClientKeysResponse.Key
 import com.orange.keymanager.SearchKeyServiceGrpc.SearchKeyServiceImplBase
 import com.orange.keymanager.models.PixClientRepository
 import com.orange.keymanager.rest.BcbPixRestClient
@@ -17,6 +18,35 @@ class SearchKeyGrpcServer(
     private val itauErpRestClient: ItauErpRestClient,
     private val pixClientRepository: PixClientRepository,
     private val bcbPixRestClient: BcbPixRestClient): SearchKeyServiceImplBase() {
+
+    override fun clientKeys(request: ClientKeysRequest, responseObserver: StreamObserver<ClientKeysResponse>) {
+
+        try {
+            itauErpRestClient.findByClientId(request.clientId)
+        } catch (exception: Exception) {
+            throwClientsKeysError(Status.NOT_FOUND, "Client not exists with this accountType", responseObserver)
+        }
+
+        val keys = pixClientRepository.findByClientId(request.clientId)
+
+        val keysResponse = keys.map { key ->
+            Key.newBuilder()
+                .setKeyId(key.id!!)
+                .setKeyValue(key.keyValue)
+                .setKeyType(KeyType.valueOf(key.keyType.toString()))
+                .setAccountType(AccountType.valueOf(key.accountType.toString()))
+                .setCreatedAt(key.createdAt.toString())
+                .build()
+        }.toList()
+
+        val response = ClientKeysResponse.newBuilder()
+            .setClientId(request.clientId)
+            .addAllKeys(keysResponse)
+            .build()
+
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
 
     override fun internalSearchKey(request: InternalSearchKeyRequest, responseObserver: StreamObserver<InternalSearchKeyResponse>) {
         val keyId = request.keyId
@@ -167,6 +197,14 @@ class SearchKeyGrpcServer(
     }
 
     private fun throwInternalError(status: Status, description: String, responseObserver: StreamObserver<InternalSearchKeyResponse>) {
+        responseObserver.onError(
+            status
+                .withDescription(description)
+                .asRuntimeException()
+        )
+    }
+
+    private fun throwClientsKeysError(status: Status, description: String, responseObserver: StreamObserver<ClientKeysResponse>) {
         responseObserver.onError(
             status
                 .withDescription(description)

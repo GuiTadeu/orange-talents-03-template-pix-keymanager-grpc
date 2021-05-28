@@ -5,7 +5,6 @@ import com.orange.keymanager.SearchKeyMessage.InternalSearchKeyRequest
 import com.orange.keymanager.SearchKeyMessage.SearchKeyRequest
 import com.orange.keymanager.SearchKeyServiceGrpc
 import com.orange.keymanager.SearchKeyServiceGrpc.SearchKeyServiceBlockingStub
-import com.orange.keymanager.models.AccountType
 import com.orange.keymanager.models.AccountType.CONTA_CORRENTE
 import com.orange.keymanager.models.KeyType
 import com.orange.keymanager.models.PixClientKey

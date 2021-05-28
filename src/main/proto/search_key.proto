@@ -6,9 +6,28 @@ service SearchKeyService {
 
     rpc searchKey (SearchKeyMessage.SearchKeyRequest) returns (SearchKeyMessage.SearchKeyResponse) {}
     rpc internalSearchKey (SearchKeyMessage.InternalSearchKeyRequest) returns (SearchKeyMessage.InternalSearchKeyResponse) {}
+    rpc clientKeys(SearchKeyMessage.ClientKeysRequest) returns (SearchKeyMessage.ClientKeysResponse) {}
 }
 
 message SearchKeyMessage {
+
+    message ClientKeysRequest {
+        string client_id = 1;
+    }
+
+    message ClientKeysResponse {
+
+        string client_id = 1;
+        repeated Key keys = 2;
+
+        message Key {
+            int64 key_id = 1;
+            KeyType key_type = 2;
+            string key_value = 3;
+            AccountType account_type = 4;
+            string created_at = 5;
+        }
+    }
 
     message InternalSearchKeyRequest {
         string client_id = 1;
