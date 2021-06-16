@@ -4,7 +4,7 @@ micronaut:
 
 grpc:
   server:
-    port: 50051
+    port: 8085
     keep-alive-time: 3h
     max-inbound-message-size: 1024
 
