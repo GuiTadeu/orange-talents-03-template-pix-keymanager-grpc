@@ -119,6 +119,7 @@ class SearchKeyGrpcServer(
                 pixKeyBcb = bcbPixRestClient.searchKeyValue(keyValue)
             } catch (exception: Exception) {
                 throwError(Status.NOT_FOUND, "Key does not exists on bcb", responseObserver)
+                return
             }
 
             val bcbOwner = PixOwner.newBuilder()
@@ -157,6 +158,7 @@ class SearchKeyGrpcServer(
             itauClient = itauErpRestClient.getClientByIdAndAccountType(foundPixClient.clientId, foundPixClient.accountType)
         } catch (exception: Exception) {
             throwError(Status.NOT_FOUND, "Client not exists with this accountType", responseObserver)
+            return
         }
 
         val itauClientOwner = PixOwner.newBuilder()

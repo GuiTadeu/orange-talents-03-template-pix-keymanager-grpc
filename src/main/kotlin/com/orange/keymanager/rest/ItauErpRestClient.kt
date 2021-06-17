@@ -7,13 +7,13 @@ import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.client.annotation.Client
 
-@Client("http://localhost:9091/api/v1")
+@Client(value = "\${services.erp}")
 interface ItauErpRestClient {
 
-    @Get("/clientes/{clientId}")
+    @Get("/api/v1/clientes/{clientId}")
     fun findByClientId(@PathVariable clientId: String) : ItauFoundClientIdResponse
 
-    @Get("/clientes/{clienteId}/contas")
+    @Get("/api/v1/clientes/{clienteId}/contas")
     fun getClientByIdAndAccountType(@PathVariable clienteId: String, @QueryValue tipo: AccountType?) : ItauFoundClientAccountResponse
 }
 

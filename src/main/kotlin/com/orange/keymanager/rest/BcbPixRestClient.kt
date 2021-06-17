@@ -12,16 +12,16 @@ import java.time.LocalDateTime
 
 @Consumes(APPLICATION_XML)
 @Produces(APPLICATION_XML)
-@Client("http://localhost:8082/api/v1")
+@Client(value = "\${services.bcb}")
 interface BcbPixRestClient {
 
-    @Post("/pix/keys")
+    @Post("/api/v1/pix/keys")
     fun saveKey(@Body request: BcbSaveKeyRequest): BcbSaveKeyResponse
 
-    @Get("/pix/keys/{keyValue}")
+    @Get("/api/v1/pix/keys/{keyValue}")
     fun searchKeyValue(@PathVariable keyValue: String): BcbSearchKeyResponse
 
-    @Delete("/pix/keys/{keyValue}")
+    @Delete("/api/v1/pix/keys/{keyValue}")
     fun deleteKeyValue(@PathVariable keyValue: String, @Body request: BcbDeleteKeyRequest)
 }
 

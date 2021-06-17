@@ -4,7 +4,7 @@ micronaut:
 
 grpc:
   server:
-    port: 8085
+    port: ${KEYMANAGER_GRPC_PORT:8085}
     keep-alive-time: 3h
     max-inbound-message-size: 1024
 
@@ -26,3 +26,7 @@ jpa.default.properties.hibernate.hbm2ddl.auto: update
 
 jackson:
   serializationInclusion: ALWAYS
+
+services:
+  erp: ${ERP_HOST:`http://localhost:9091`}
+  bcb: ${BCB_HOST:`http://localhost:8082`}

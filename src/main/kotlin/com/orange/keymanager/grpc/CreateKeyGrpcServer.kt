@@ -25,11 +25,13 @@ class CreateKeyGrpcServer(
 
         if (!convertedKeyType.isValid(request.keyValue)) {
             throwError(INVALID_ARGUMENT, "Invalid key value", responseObserver)
+            return
         }
 
         if (convertedKeyType != KeyType.RANDOM) {
             if (pixClientRepository.findByKeyValue(request.keyValue).isPresent) {
                 throwError(ALREADY_EXISTS, "Pix key already registered", responseObserver)
+                return
             }
         }
 
@@ -37,6 +39,7 @@ class CreateKeyGrpcServer(
             itauClient = itauErpRestClient.getClientByIdAndAccountType(request.clientId, convertedAccountType)
         } catch (exception: Exception) {
             throwError(NOT_FOUND, "Client not exists with this accountType", responseObserver)
+            return
         }
 
         val bcbSaveKeyRequest = BcbSaveKeyRequest(
@@ -70,6 +73,7 @@ class CreateKeyGrpcServer(
 
         } catch (exception: Exception) {
             throwError(ABORTED, "Error trying to save on bcb", responseObserver)
+            return
         }
 
         pixClientRepository.save(pixClientKey)
